@@ -108,11 +108,16 @@ classdef Robot < Map
                             'caches', caches,...
                             'grads', grads);
             
-            obj.learning_rate = learning_rate
+            obj.learning_rate = learning_rate;
+        end
+        
+        function D = read_distances(obj)
+            D = calc_distances(obj.robot_pos, obj.obs);
+            D(D > obj.observe_range) = 0;
         end
         
         function obj = observe_state(obj)
-            D = obj.read_distances(obj);
+            D = obj.read_distances();
             angles = calc_angles(obj.robot_pos, obj.obs) - obj.orientation;
             for i = 1:length(obj.detect_range)
                 obj_idx = angles >= obj.detect_range(i, 1) &...
@@ -168,11 +173,6 @@ classdef Robot < Map
             elseif ~isempty(find(next_D < obj.min_dist, 1))
                 obj.next_state_property = 'FS';
             end
-        end
-        
-        function D = read_distances(obj)
-            D = calc_distances(obj.robot_pos, obj.obs);
-            D(D > obj.observe_range) = 0;
         end
         
         function obj = get_reward(obj)

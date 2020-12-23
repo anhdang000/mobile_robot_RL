@@ -4,6 +4,7 @@ classdef Map
     
     properties
         map_size
+        step
         num_obs
         num_sta_obs
         num_mov_obs
@@ -23,6 +24,7 @@ classdef Map
         function obj = Map(map_size, num_obs, sta_mov_split)
             % Construct instances of this class
             obj.map_size = map_size;
+            obj.step = floor(obj.map_size/10);
             obj.num_obs = num_obs;
             obj.num_sta_obs = round(obj.num_obs*sta_mov_split);
             obj.num_mov_obs = obj.num_obs - obj.num_sta_obs;
