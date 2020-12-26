@@ -1,7 +1,6 @@
 classdef Robot < Map
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
-
+    % Mobile robot that works in the configured environment
+    
     %   Define state properties
     %   'SS': a state where the robot has a low or no possibility
     %       of collision with some obstacles.
@@ -27,6 +26,7 @@ classdef Robot < Map
         action
         reward
         q_value
+        detect_angles
         detect_range
         min_dist
         epsilon
@@ -67,9 +67,11 @@ classdef Robot < Map
             obj.reward = 0;
             obj.q_value = zeros(7, 1);
             
+            obj.detect_angles = linspace(0, 2*pi, 8)';
+            offset = pi/(length(obj.detect_angles) - 1);
             detect_angle1 = linspace(0, 2*pi, 8)';
             detect_angle2 = [detect_angle1(2:end); detect_angle1(1)];
-            obj.detect_range = [detect_angle1 detect_angle2];
+            obj.detect_range = [detect_angle1 detect_angle2] - offset;
             
             obj.min_dist = min_dist;
             obj.epsilon = epsilon;
@@ -119,19 +121,21 @@ classdef Robot < Map
         function obj = observe_state(obj)
             D = obj.read_distances();
             angles = calc_angles(obj.robot_pos, obj.obs) - obj.orientation;
-            for i = 1:length(obj.detect_range)
+
+            for i = 1:length(obj.detect_angles)-1
                 obj_idx = angles >= obj.detect_range(i, 1) &...
                           angles < obj.detect_range(i, 2);
                       
                 % Retrieve distance signal from sensor
                 detected = D(obj_idx);
                 if max(detected) == 0
-                    detected = 0;
+                    detected = 0;fprintf('1\n');
                 else
                     detected(detected == 0) = Inf;
-                    detected = min(detected);
+                    detected = min(detected);fprintf('2\n');
                 end
-                
+                disp(obj.state(3+i));
+                fprintf('\ndetected:');disp(size(detected));
                 obj.state(3+i) = detected;
             end
         end

@@ -1,6 +1,5 @@
 classdef Map
-    %UNTITLED3 Summary of this class goes here
-    %   Detailed explanation goes here
+    % The environment
     
     properties
         map_size
@@ -23,6 +22,7 @@ classdef Map
     methods
         function obj = Map(map_size, num_obs, sta_mov_split)
             % Construct instances of this class
+            
             obj.map_size = map_size;
             obj.step = floor(obj.map_size/10);
             obj.num_obs = num_obs;
