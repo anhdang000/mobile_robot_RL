@@ -32,6 +32,12 @@ classdef Robot < Map
         epsilon
         nn      % {layers, params, caches, grads}
         learning_rate
+        r1
+        r2
+        r3
+        r4
+        r5
+        r6
     end
     
     methods
@@ -113,6 +119,15 @@ classdef Robot < Map
             obj.learning_rate = learning_rate;
         end
         
+        function obj = set_reward_params(obj, r1, r2, r3, r4, r5, r6)
+            obj.r1 = r1;
+            obj.r2 = r2;
+            obj.r3 = r3;
+            obj.r4 = r4;
+            obj.r5 = r5;
+            obj.r6 = r6;
+        end
+        
         function D = read_distances(obj)
             D = calc_distances(obj.robot_pos, obj.obs);
             D(D > obj.observe_range) = 0;
@@ -122,21 +137,16 @@ classdef Robot < Map
             D = obj.read_distances();
             angles = calc_angles(obj.robot_pos, obj.obs) - obj.orientation;
 
-            for i = 1:length(obj.detect_angles)-1
-                obj_idx = angles >= obj.detect_range(i, 1) &...
-                          angles < obj.detect_range(i, 2);
-                      
-                % Retrieve distance signal from sensor
-                detected = D(obj_idx);
-                if max(detected) == 0
-                    detected = 0;fprintf('1\n');
+            for i = 1:length(angles)
+                capture_flag = angles(i) >= obj.detect_range(:, 1) & ...
+                              angles(i) < obj.detect_range(:, 2) & ...
+                              D(i) > 0;
+                if max(capture_flag) == 1
+                    obj.state(3+find(capture_flag==1)) = D(i);
                 else
-                    detected(detected == 0) = Inf;
-                    detected = min(detected);fprintf('2\n');
+                    continue
                 end
-                disp(obj.state(3+i));
-                fprintf('\ndetected:');disp(size(detected));
-                obj.state(3+i) = detected;
+                
             end
         end
        
@@ -152,7 +162,7 @@ classdef Robot < Map
             elseif ~isempty(danger_idx)
                 obj.state_property = 'NS';
             end
-            if min((obj.robot_pos - obj.goal) < obj.min_dist) == 1
+            if D(length(D)) < obj.min_dist
                obj.state_property = 'WS';
             elseif ~isempty(find(D < obj.min_dist, 1))
                 obj.state_property = 'FS';
@@ -172,8 +182,8 @@ classdef Robot < Map
             elseif ~isempty(danger_idx)
                 obj.next_state_property = 'NS';
             end
-            if min((obj.next_state(1:2) - obj.goal) < obj.min_dist) == 1
-               obj.next_state_property = 'WS';
+            if next_D(length(next_D)) < obj.min_dist
+                obj.next_state_property = 'WS';
             elseif ~isempty(find(next_D < obj.min_dist, 1))
                 obj.next_state_property = 'FS';
             end
@@ -181,21 +191,21 @@ classdef Robot < Map
         
         function obj = get_reward(obj)
             if obj.state_property == 'NS' && obj.next_state_property == 'SS'
-                obj.reward = obj.reward + 0.3;
+                obj.reward = obj.reward + obj.r1;
             elseif obj.state_property == 'SS' && obj.next_state_property == 'NS'
-                obj.reward = obj.reward - 0.2;
+                obj.reward = obj.reward + obj.r2;
             elseif obj.state_property == 'NS' && obj.next_state_property == 'NS'
                 D = max(obj.state(4:end));
                 next_D = max(obj.next_state(4:end));
                 if next_D > D
-                    obj.reward = obj.reward + 0.4;
+                    obj.reward = obj.reward + obj.r3;
                 else
-                    obj.reward = obj.reward - 0.4;
+                    obj.reward = obj.reward + obj.r4;
                 end
             elseif obj.state_property == 'WS'
-                obj.reward = obj.reward + 1;
+                obj.reward = obj.reward + obj.r5;
             elseif obj.state_property == 'FS'
-                obj.reward = obj.reward - 0.6;
+                obj.reward = obj.reward + obj.r6;
             end
         end
         
